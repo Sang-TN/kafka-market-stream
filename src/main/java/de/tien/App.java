@@ -1,6 +1,8 @@
 package de.tien;
 import java.time.Instant;   
-import tools.jackson.databind.json.JsonMapper; 
+import tools.jackson.databind.json.JsonMapper;
+
+import java.util.HashMap;
 import java.util.Properties;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -8,6 +10,12 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 public class App {
     public static void main(String[] args) {
+
+        HashMap<String, Double> currentPrices = new HashMap<>();
+
+        currentPrices.put("NVDA", 389.88);
+        currentPrices.put("SAP", 187.69);
+        currentPrices.put("TSLA", 283.12);
 
         JsonMapper mapper = JsonMapper.builder().build();
         
