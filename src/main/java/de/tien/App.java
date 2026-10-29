@@ -1,5 +1,6 @@
 package de.tien;
-import java.time.Instant;   
+
+import java.time.Instant;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.HashMap;
@@ -29,27 +30,27 @@ public class App {
         Random random = new Random();
         double sigma = 0.01;
 
-        try(KafkaProducer<String, String> producer = new KafkaProducer<>(config)){ 
-        while (true) {
-            for (String ticker : currentPrices.keySet()) {
-                double oldPrice = currentPrices.get(ticker);
+        try (KafkaProducer<String, String> producer = new KafkaProducer<>(config)) {
+            while (true) {
+                for (String ticker : currentPrices.keySet()) {
+                    double oldPrice = currentPrices.get(ticker);
 
-                double z = random.nextGaussian();
-                double r = sigma * z;
+                    double z = random.nextGaussian();
+                    double r = sigma * z;
 
-                double newPrice = oldPrice * (1 + r);
+                    double newPrice = oldPrice * (1 + r);
 
-                currentPrices.put(ticker, newPrice);
+                    currentPrices.put(ticker, newPrice);
 
-                PriceEvent priceEvent = new PriceEvent(ticker, Instant.now(), newPrice); 
+                    PriceEvent priceEvent = new PriceEvent(ticker, Instant.now(), newPrice);
 
-                String json = mapper.writeValueAsString(priceEvent);
+                    String json = mapper.writeValueAsString(priceEvent);
 
-                ProducerRecord<String, String> newRecord = new ProducerRecord<>("prices", ticker, json);
-                producer.send(newRecord);
+                    ProducerRecord<String, String> newRecord = new ProducerRecord<>("prices", ticker, json);
+                    producer.send(newRecord);
+                }
+                Thread.sleep(1000);
             }
-            Thread.sleep(1000);
         }
-    }
     }
 }
