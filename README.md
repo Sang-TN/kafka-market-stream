@@ -66,8 +66,14 @@ docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-topics.sh --cre
 mvn compile exec:java -Dexec.mainClass=de.tien.App
 ```
  
-**4. Watch the stream** (in a second terminal)
- 
+**4. Run the moving average consumer** (in a second terminal)
+
+```bash
+mvn compile exec:java -Dexec.mainClass=de.tien.MovingAverageConsumer
+```
+
+To see the raw events instead, use the console consumer:
+
 ```bash
 docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-console-consumer.sh --topic prices --bootstrap-server localhost:9092 --from-beginning
 ```
@@ -90,7 +96,8 @@ kafka-market-stream/
 ├── docker-compose.yml          # Kafka broker
 ├── pom.xml                     # Maven build and dependencies
 └── src/main/java/de/tien/
-    ├── App.java                # entry point
-    └── PriceEvent.java         # event model
+    ├── App.java                    # producer: price generator
+    ├── MovingAverageConsumer.java  # consumer: moving average per ticker
+    └── PriceEvent.java             # event model
 ```
  
