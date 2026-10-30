@@ -51,7 +51,11 @@ public class MovingAverageConsumer {
                         sum += p;
                     }
                     double movingAverage = (double) sum / liste.size();
-                    System.out.printf("Ticker: %s, Moving Average: %.2f%n", ticker, movingAverage);
+                    // System.out.printf("Ticker: %s, Partition: %d, Offset: %d, Moving Average:
+                    // %.2f%n", ticker,
+                    // record.partition(), record.offset(), movingAverage);
+                    System.out.printf("%-5s P%d  #%d  MA: %.2f%n", ticker, record.partition(), record.offset(),
+                            movingAverage);
                 }
             }
         }
