@@ -86,7 +86,7 @@ docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-console-consume
 | 1 | Kafka via Docker, topic setup, manual send/receive via CLI | done |
 | 2 | Java producer: price generator | done |
 | 3 | Java consumer: moving average | done |
-| 4 | Experiments: consumer groups, partitions, keys | planned |
+| 4 | Experiments: consumer groups, partitions, keys | done |
 | 5 | More analyses: signals, alerts, portfolio value, possibly real market data | planned |
  
 ## Project structure
