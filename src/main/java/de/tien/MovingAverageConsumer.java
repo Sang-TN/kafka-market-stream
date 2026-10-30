@@ -46,11 +46,7 @@ public class MovingAverageConsumer {
                     if (liste.size() > windowSize) {
                         liste.remove(0);
                     }
-                    double sum = 0;
-                    for (double p : liste) {
-                        sum += p;
-                    }
-                    double movingAverage = (double) sum / liste.size();
+                    double movingAverage = calculateAverage(liste);
                     // System.out.printf("Ticker: %s, Partition: %d, Offset: %d, Moving Average:
                     // %.2f%n", ticker,
                     // record.partition(), record.offset(), movingAverage);
@@ -59,5 +55,13 @@ public class MovingAverageConsumer {
                 }
             }
         }
+    }
+
+    static double calculateAverage(ArrayList<Double> prices) {
+        double sum = 0;
+        for (double price : prices) {
+            sum += price;
+        }
+        return sum / prices.size();
     }
 }
