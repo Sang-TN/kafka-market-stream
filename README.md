@@ -1,5 +1,7 @@
 # kafka-market-stream
- 
+
+![CI](https://github.com/Sang-TN/kafka-market-stream/actions/workflows/ci.yml/badge.svg)
+
 Real-time market data pipeline built with **Java** and **Apache Kafka**.
  
 A price generator continuously publishes stock prices to Kafka. Several independent consumers analyse the same stream live, for example moving averages, trading signals, volatility alerts and portfolio value.
@@ -34,15 +36,17 @@ flowchart LR
 ```
  
 Modelled in Java as an immutable `record PriceEvent(String ticker, Instant timestamp, double price)`. Timestamps are stored in UTC.
- 
-## Tech stack
- 
-- Java 25
+
+## Tech Stack
+- Java 17+ (developed on Java 25)
 - Apache Kafka (single broker via Docker, KRaft mode)
 - Maven
 - Jackson 3 (JSON serialization)
+- JUnit 5 (unit tests)
+- GitHub Actions (CI)
 - Docker Compose
 - GitHub Codespaces
+  
 ## Getting started
  
 Requirements: Docker, Java 17+, Maven. Everything is preinstalled in GitHub Codespaces.
@@ -77,6 +81,13 @@ To see the raw events instead, use the console consumer:
 ```bash
 docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-console-consumer.sh --topic prices --bootstrap-server localhost:9092 --from-beginning
 ```
+## Tests
+
+```bash
+mvn test
+```
+
+Unit tests cover the moving average calculation and run without Kafka. GitHub Actions runs them automatically on every pull request and on pushes to `main`.
  
 ## Roadmap
  
@@ -87,17 +98,22 @@ docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-console-consume
 | 2 | Java producer: price generator | done |
 | 3 | Java consumer: moving average | done |
 | 4 | Experiments: consumer groups, partitions, keys | done |
+| 4b | Unit tests and CI (GitHub Actions) | done |
 | 5 | More analyses: signals, alerts, portfolio value, possibly real market data | planned |
  
 ## Project structure
  
 ```
 kafka-market-stream/
-├── docker-compose.yml          # Kafka broker
-├── pom.xml                     # Maven build and dependencies
-└── src/main/java/de/tien/
-    ├── App.java                    # producer: price generator
-    ├── MovingAverageConsumer.java  # consumer: moving average per ticker
-    └── PriceEvent.java             # event model
+├── .github/workflows/ci.yml        # CI: runs tests on every PR
+├── docker-compose.yml              # Kafka broker
+├── pom.xml                         # Maven build and dependencies
+└── src/
+    ├── main/java/de/tien/
+    │   ├── App.java                    # producer: price generator
+    │   ├── MovingAverageConsumer.java  # consumer: moving average per ticker
+    │   └── PriceEvent.java             # event model
+    └── test/java/de/tien/
+        └── MovingAverageConsumerTest.java  # unit tests
 ```
  
