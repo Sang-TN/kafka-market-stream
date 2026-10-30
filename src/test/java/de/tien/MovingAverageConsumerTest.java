@@ -20,4 +20,14 @@ public class MovingAverageConsumerTest {
         assertEquals(30.0, average, 0.0001);
     }
 
+    @Test
+    public void averageOfSinglePrice() {
+        ArrayList<Double> prices = new ArrayList<>();
+        prices.add(42.0);
+
+        double average = MovingAverageConsumer.calculateAverage(prices);
+
+        assertEquals(42.0, average, 0.0001);
+    }
+
 }
