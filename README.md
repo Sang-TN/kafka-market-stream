@@ -81,6 +81,14 @@ To see the raw events instead, use the console consumer:
 ```bash
 docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-console-consumer.sh --topic prices --bootstrap-server localhost:9092 --from-beginning
 ```
+
+**5. Run the portfolio value consumer** (optional, in a third terminal)
+
+```bash
+mvn compile exec:java -Dexec.mainClass=de.tien.PortfolioValueConsumer
+```
+
+It holds a fixed portfolio (10 NVDA, 20 SAP, 5 TSLA) and prints its total value after every price event, once a price for every stock is known.
 ## Tests
 
 ```bash
@@ -99,7 +107,7 @@ Unit tests cover the moving average calculation and run without Kafka. GitHub Ac
 | 3 | Java consumer: moving average | done |
 | 4 | Experiments: consumer groups, partitions, keys | done |
 | 4b | Unit tests and CI (GitHub Actions) | done |
-| 5 | More analyses: signals, alerts, portfolio value, possibly real market data | planned |
+| 5 | More analyses: portfolio value (done), signals, alerts, possibly real market data | in progress |
  
 ## Project structure
  
@@ -115,5 +123,6 @@ kafka-market-stream/
     │   └── PriceEvent.java             # event model
     └── test/java/de/tien/
         └── MovingAverageConsumerTest.java  # unit tests
+        ├── PortfolioValueConsumer.java # consumer: live portfolio value
 ```
  
