@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import tools.jackson.databind.json.JsonMapper;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -47,7 +46,7 @@ public class PortfolioValueConsumer {
                             double lastPrice = lastPrices.get(stock);
                             totalValue += quantity * lastPrice;
                         }
-                        System.out.printf("Portfolio Value: %.2f%n", totalValue);
+                        System.out.printf("%-6s %.2f  →  Portfolio: %.2f%n", ticker, price, totalValue);
                     } 
                 }
             } 
