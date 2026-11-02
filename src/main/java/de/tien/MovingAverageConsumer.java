@@ -5,10 +5,10 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.List;
 import java.time.Duration;
+import tools.jackson.databind.json.JsonMapper;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import tools.jackson.databind.json.JsonMapper;
 import org.apache.kafka.common.serialization.StringDeserializer;
 
 public class MovingAverageConsumer {
