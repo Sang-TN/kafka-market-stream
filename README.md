@@ -28,6 +28,7 @@ flowchart LR
 | Message key | ticker (e.g. `AAPL`) | all events of one stock land in the same partition, so their order is preserved |
 | Message format | JSON | fields are named, so new fields don't break existing consumers |
 | Consumers | one consumer group per analysis | every analysis receives the full stream |
+| Listeners | `EXTERNAL` (`localhost:9092`) and `INTERNAL` (`kafka:19092`) | apps outside Docker and containers inside the Docker network each need an address that works for them |
  
 ### Event
  
@@ -45,6 +46,7 @@ Modelled in Java as an immutable `record PriceEvent(String ticker, Instant times
 - JUnit 5 (unit tests)
 - GitHub Actions (CI)
 - Docker Compose
+- Kafbat UI (web interface for Kafka)
 - GitHub Codespaces
   
 ## Getting started
@@ -57,6 +59,15 @@ Requirements: Docker, Java 17+, Maven. Everything is preinstalled in GitHub Code
 docker compose up -d
 docker ps   # STATUS should show "Up"
 ```
+
+This also starts **Kafka UI**, a web interface for the broker. Open it at [http://localhost:8080](http://localhost:8080) (in Codespaces: *Ports* tab → port 8080 → globe icon). It shows topics, partitions, messages and consumer groups with their lag. It may take up to a minute to start.
+
+> **Codespaces note:** If Kafka UI keeps loading or shows error 500, the Codespace firewall blocks traffic between containers. Run this once per Codespace start:
+>
+> ```bash
+> sudo iptables-legacy -P FORWARD ACCEPT
+> docker compose restart kafka-ui
+> ```
  
 **2. Create the topic**
  
@@ -89,6 +100,7 @@ mvn compile exec:java -Dexec.mainClass=de.tien.PortfolioValueConsumer
 ```
 
 It holds a fixed portfolio (10 NVDA, 20 SAP, 5 TSLA) and prints its total value after every price event, once a price for every stock is known.
+
 ## Tests
 
 ```bash
@@ -107,22 +119,22 @@ Unit tests cover the moving average calculation and run without Kafka. GitHub Ac
 | 3 | Java consumer: moving average | done |
 | 4 | Experiments: consumer groups, partitions, keys | done |
 | 4b | Unit tests and CI (GitHub Actions) | done |
-| 5 | More analyses: portfolio value (done), signals, alerts, possibly real market data | in progress |
+| 5 | More analyses: portfolio value (done), Kafka UI (done), signals, alerts, possibly real market data | in progress |
  
 ## Project structure
  
 ```
 kafka-market-stream/
 ├── .github/workflows/ci.yml        # CI: runs tests on every PR
-├── docker-compose.yml              # Kafka broker
+├── docker-compose.yml              # Kafka broker + Kafka UI
 ├── pom.xml                         # Maven build and dependencies
 └── src/
     ├── main/java/de/tien/
     │   ├── App.java                    # producer: price generator
     │   ├── MovingAverageConsumer.java  # consumer: moving average per ticker
+    │   ├── PortfolioValueConsumer.java # consumer: live portfolio value
     │   └── PriceEvent.java             # event model
     └── test/java/de/tien/
         └── MovingAverageConsumerTest.java  # unit tests
-        ├── PortfolioValueConsumer.java # consumer: live portfolio value
 ```
  
