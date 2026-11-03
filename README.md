@@ -107,7 +107,7 @@ It holds a fixed portfolio (10 NVDA, 20 SAP, 5 TSLA) and prints its total value 
 mvn test
 ```
 
-Unit tests cover the moving average calculation and run without Kafka. GitHub Actions runs them automatically on every pull request and on pushes to `main`.
+Unit tests cover the moving average and the portfolio value calculation and run without Kafka. GitHub Actions runs them automatically on every pull request and on pushes to `main`.
  
 ## Roadmap
  
@@ -135,6 +135,7 @@ kafka-market-stream/
     │   ├── PortfolioValueConsumer.java # consumer: live portfolio value
     │   └── PriceEvent.java             # event model
     └── test/java/de/tien/
-        └── MovingAverageConsumerTest.java  # unit tests
+        ├── MovingAverageConsumerTest.java  # unit tests
+        └── PortfolioValueConsumerTest.java  # unit tests: portfolio value
 ```
  
