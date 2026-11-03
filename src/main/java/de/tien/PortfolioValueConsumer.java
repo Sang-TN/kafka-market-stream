@@ -40,17 +40,21 @@ public class PortfolioValueConsumer {
 
                     boolean allPricesAvailable = lastPrices.size() == holdings.size();
                     if (allPricesAvailable) {
-                        double totalValue = 0.0;
-                        for (String stock : holdings.keySet()) {
-                            int quantity = holdings.get(stock);
-                            double lastPrice = lastPrices.get(stock);
-                            totalValue += quantity * lastPrice;
-                        }
-                        System.out.printf("%-6s %.2f  →  Portfolio: %.2f%n", ticker, price, totalValue);
+                            double totalValue = calculatePortfolioValue(holdings, lastPrices);
+                            System.out.printf("%-6s %.2f  →  Portfolio: %.2f%n", ticker, price, totalValue);
                     } 
                 }
             } 
         }  
 
     }
+    static double calculatePortfolioValue(HashMap<String, Integer> holdings, HashMap<String, Double> lastPrices) {
+        double totalValue = 0.0;
+                        for (String stock : holdings.keySet()) {
+                        int quantity = holdings.get(stock);
+                        double lastPrice = lastPrices.get(stock);
+                        totalValue += quantity * lastPrice;
+            }
+        return totalValue;
+    } 
 }
