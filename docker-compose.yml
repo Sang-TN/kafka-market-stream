@@ -35,3 +35,5 @@ services:
       POSTGRES_USER: market       
       POSTGRES_PASSWORD: market   
       POSTGRES_DB: marketdata     
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
