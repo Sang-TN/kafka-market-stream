@@ -8,7 +8,7 @@ A price generator continuously publishes stock prices to Kafka. Several independ
  
 This project is the streaming counterpart to my Python batch pipeline: instead of loading data once and processing it, events are handled the moment they arrive.
  
-> **Work in progress.** Built step by step as a learning project. See the [roadmap](#roadmap) for the current status.
+> **Completed learning project** (October – November 2026), built step by step during my IT internship. See [Limitations](#limitations) for known simplifications and the [roadmap](#roadmap) for possible next steps.
  
 ## Architecture
  
