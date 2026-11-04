@@ -26,3 +26,14 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:19092
+  
+  postgres:
+    image: postgres:17
+    ports: 
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: market       
+      POSTGRES_PASSWORD: market   
+      POSTGRES_DB: marketdata     
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
