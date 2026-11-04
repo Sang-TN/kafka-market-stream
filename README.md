@@ -4,7 +4,7 @@
 
 Real-time market data pipeline built with **Java** and **Apache Kafka**.
  
-A price generator continuously publishes stock prices to Kafka. Several independent consumers analyse the same stream live, for example moving averages, trading signals, volatility alerts and portfolio value.
+A price generator continuously publishes stock prices to Kafka. Several independent consumers process the same stream live: a moving average, a live portfolio value, and a sink that stores every event in PostgreSQL for SQL analysis.
  
 This project is the streaming counterpart to my Python batch pipeline: instead of loading data once and processing it, events are handled the moment they arrive.
  
@@ -16,9 +16,9 @@ This project is the streaming counterpart to my Python batch pipeline: instead o
 flowchart LR
     P[Price Generator<br/>Producer] -->|PriceEvent as JSON<br/>key = ticker| T[(Kafka topic<br/>prices<br/>3 partitions)]
     T --> C1[Moving Average]
-    T --> C2[Trading Signals]
-    T --> C3[Volatility Alert]
-    T --> C4[Portfolio Value]
+    T --> C2[Portfolio Value]
+    T --> C3[PostgreSQL Sink]
+    C3 -->|JDBC| DB[(PostgreSQL<br/>table prices)]
 ```
  
 | Decision | Choice | Reason |
@@ -29,6 +29,8 @@ flowchart LR
 | Message format | JSON | fields are named, so new fields don't break existing consumers |
 | Consumers | one consumer group per analysis | every analysis receives the full stream |
 | Listeners | `EXTERNAL` (`localhost:9092`) and `INTERNAL` (`kafka:19092`) | apps outside Docker and containers inside the Docker network each need an address that works for them |
+| Storage | PostgreSQL, one row per event | events are kept permanently and can be analysed with SQL |
+| Event time | stored from the event (`timestamp`), as `TIMESTAMPTZ` | the time the price was created, not when it was processed; time zone safe |
  
 ### Event
  
@@ -47,6 +49,7 @@ Modelled in Java as an immutable `record PriceEvent(String ticker, Instant times
 - GitHub Actions (CI)
 - Docker Compose
 - Kafbat UI (web interface for Kafka)
+- PostgreSQL 17 (via Docker) with JDBC
 - GitHub Codespaces
   
 ## Getting started
@@ -59,8 +62,8 @@ Requirements: Docker, Java 17+, Maven. Everything is preinstalled in GitHub Code
 docker compose up -d
 docker ps   # STATUS should show "Up"
 ```
-
-This also starts **Kafka UI**, a web interface for the broker. Open it at [http://localhost:8080](http://localhost:8080) (in Codespaces: *Ports* tab → port 8080 → globe icon). It shows topics, partitions, messages and consumer groups with their lag. It may take up to a minute to start.
+This also starts **PostgreSQL** (port 5432) and creates the table `prices` from `db/init.sql`.
+Additionally **Kafka UI**, a web interface for the broker, starts as well. Open it at [http://localhost:8080](http://localhost:8080) (in Codespaces: *Ports* tab → port 8080 → globe icon). It shows topics, partitions, messages and consumer groups with their lag. It may take up to a minute to start.
 
 > **Codespaces note:** If Kafka UI keeps loading or shows error 500, the Codespace firewall blocks traffic between containers. Run this once per Codespace start:
 >
@@ -101,6 +104,40 @@ mvn compile exec:java -Dexec.mainClass=de.tien.PortfolioValueConsumer
 
 It holds a fixed portfolio (10 NVDA, 20 SAP, 5 TSLA) and prints its total value after every price event, once a price for every stock is known.
 
+**6. Store events in PostgreSQL** (optional)
+
+```bash
+mvn compile exec:java -Dexec.mainClass=de.tien.PostgresSinkConsumer
+```
+
+Every price event is written to the table `prices`. Open a SQL shell:
+
+```bash
+docker exec -it kafka-market-stream-postgres-1 psql -U market -d marketdata
+```
+
+Example queries:
+
+```sql
+-- latest prices
+SELECT ticker, ROUND(price::numeric, 2) AS price, event_time
+FROM prices
+ORDER BY event_time DESC
+LIMIT 6;
+
+-- statistics per stock
+SELECT ticker,
+       COUNT(*) AS price_count,
+       ROUND(MIN(price)::numeric, 2) AS min_price,
+       ROUND(MAX(price)::numeric, 2) AS max_price,
+       ROUND(AVG(price)::numeric, 2) AS avg_price
+FROM prices
+GROUP BY ticker
+ORDER BY ticker;
+```
+
+> Data lives inside the container: `docker compose stop` keeps it, `docker compose down` deletes it.
+
 ## Tests
 
 ```bash
@@ -119,23 +156,27 @@ Unit tests cover the moving average and the portfolio value calculation and run 
 | 3 | Java consumer: moving average | done |
 | 4 | Experiments: consumer groups, partitions, keys | done |
 | 4b | Unit tests and CI (GitHub Actions) | done |
-| 5 | More analyses: portfolio value (done), Kafka UI (done), signals, alerts, possibly real market data | in progress |
+| 5 | More analyses: portfolio value, Kafka UI, tests | done |
+| 6 | PostgreSQL sink: store events, SQL analysis | done |
+| 7 | Possible next steps: moving average in SQL (window functions), trading signals, real market data | planned |
  
 ## Project structure
  
 ```
 kafka-market-stream/
 ├── .github/workflows/ci.yml        # CI: runs tests on every PR
-├── docker-compose.yml              # Kafka broker + Kafka UI
+├── db/init.sql                     # creates the PostgreSQL table
+├── docker-compose.yml              # Kafka broker + Kafka UI + PostgreSQL
 ├── pom.xml                         # Maven build and dependencies
 └── src/
     ├── main/java/de/tien/
     │   ├── App.java                    # producer: price generator
     │   ├── MovingAverageConsumer.java  # consumer: moving average per ticker
     │   ├── PortfolioValueConsumer.java # consumer: live portfolio value
+    │   ├── PostgresSinkConsumer.java   # consumer: writes events to PostgreSQL
     │   └── PriceEvent.java             # event model
     └── test/java/de/tien/
-        ├── MovingAverageConsumerTest.java  # unit tests
+        ├── MovingAverageConsumerTest.java   # unit tests: moving average
         └── PortfolioValueConsumerTest.java  # unit tests: portfolio value
 ```
  
