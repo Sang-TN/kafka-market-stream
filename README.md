@@ -145,7 +145,37 @@ mvn test
 ```
 
 Unit tests cover the moving average and the portfolio value calculation and run without Kafka. GitHub Actions runs them automatically on every pull request and on pushes to `main`.
- 
+
+## Error handling
+
+Events that cannot be parsed (invalid JSON or wrong data types) no longer crash a consumer:
+
+- `MovingAverageConsumer` and `PortfolioValueConsumer` log a warning with partition and offset and skip the event. A missing price only affects the live output briefly.
+- `PostgresSinkConsumer` sends the original event unchanged to the dead letter topic `prices-dlq`, so nothing that should be stored is lost silently.
+
+Create the dead letter topic once:
+
+```bash
+docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-topics.sh --create --topic prices-dlq --partitions 1 --bootstrap-server localhost:9092
+```
+
+## Limitations
+
+This is a learning project. Known simplifications and how a production system would handle them:
+
+| Limitation | In production |
+|---|---|
+| Simulated prices (random walk) | real market data feed |
+| Single Kafka broker, no replication | several brokers, each partition replicated |
+| JSON without a schema | Avro or Protobuf with a schema registry |
+| Configuration (addresses, credentials) hard-coded in Java and `docker-compose.yml` | environment variables or a secrets manager |
+| Kafka and PostgreSQL unencrypted, password in the repository | TLS, authentication, credentials outside the code |
+| Consumer state (moving average window, last prices) only in memory, lost on restart | state stores, e.g. Kafka Streams |
+| At-least-once delivery: after a crash the sink may store an event twice | idempotent writes, e.g. a unique key on the event |
+| Events are only checked for valid JSON and types, not for plausible values | validation rules (e.g. price > 0, known ticker) |
+| PostgreSQL data lives inside the container | Docker volume or a managed database |
+| Kafka settings duplicated in every consumer | shared configuration class |
+
 ## Roadmap
  
 | Phase | Content | Status |
@@ -159,6 +189,70 @@ Unit tests cover the moving average and the portfolio value calculation and run 
 | 5 | More analyses: portfolio value, Kafka UI, tests | done |
 | 6 | PostgreSQL sink: store events, SQL analysis | done |
 | 7 | Possible next steps: moving average in SQL (window functions), trading signals, real market data | planned |
+
+## Useful commands
+
+All Kafka tools run inside the Kafka container. Each command starts with
+`docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/` followed by the script.
+
+### Kafka
+
+| Purpose | Command |
+|---|---|
+| List topics | `docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server localhost:9092` |
+| Describe a topic | `docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-topics.sh --describe --topic prices --bootstrap-server localhost:9092` |
+| Send messages by hand | `docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-console-producer.sh --topic prices --bootstrap-server localhost:9092` |
+| Read a topic from the beginning | `docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-console-consumer.sh --topic prices --bootstrap-server localhost:9092 --from-beginning` |
+| Read the dead letter topic with keys | `docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-console-consumer.sh --topic prices-dlq --bootstrap-server localhost:9092 --from-beginning --formatter-property print.key=true` |
+| List consumer groups | `docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --list --bootstrap-server localhost:9092` |
+| Offsets and lag of a group | `docker exec -it kafka-market-stream-kafka-1 /opt/kafka/bin/kafka-consumer-groups.sh --describe --group postgres-sink --bootstrap-server localhost:9092` |
+
+### Test the error handling
+
+Start the producer and a consumer, open the console producer (see above) and send:
+
+```
+hallo
+{"ticker":"SAP","timestamp":"2026-11-04T10:00:00Z","price":"teuer"}
+```
+
+The consumer logs a warning with partition and offset and keeps running. `PostgresSinkConsumer` forwards the events to `prices-dlq`.
+
+### Docker
+
+| Purpose | Command |
+|---|---|
+| Start all services in the background | `docker compose up -d` |
+| Show running containers | `docker ps` |
+| Stop services, keep data | `docker compose stop` |
+| Remove containers, data is lost | `docker compose down` |
+| Start or stop Kafka UI only | `docker compose start kafka-ui` / `docker compose stop kafka-ui` |
+| Last log lines of a service | `docker compose logs kafka-ui \| tail -n 30` |
+
+### PostgreSQL
+
+Open a SQL shell:
+
+```bash
+docker exec -it kafka-market-stream-postgres-1 psql -U market -d marketdata
+```
+
+| In psql | Effect |
+|---|---|
+| `\dt` | list tables |
+| `\d prices` | show the table structure |
+| `SELECT COUNT(*) FROM prices;` | number of stored events |
+| `\q` | quit |
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| Kafka UI keeps loading or shows error 500 in Codespaces | `sudo iptables-legacy -P FORWARD ACCEPT`, then `docker compose restart kafka-ui` |
+| `RWLayer ... unexpectedly nil` after a Codespace restart | `docker compose down`, then `docker compose up -d` |
+| Topic `prices` missing after `docker compose down` | create it again (Getting started, step 2) |
+| Consumer shows `Connection refused` | services not running: `docker compose up -d` |
+| VS Code crashes in Codespaces | low memory: stop Kafka UI and consumers you don't need |
  
 ## Project structure
  
