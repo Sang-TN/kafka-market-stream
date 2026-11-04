@@ -6,6 +6,7 @@ import java.util.Properties;
 import java.util.List;
 import java.time.Duration;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.core.JacksonException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -29,10 +30,16 @@ public class MovingAverageConsumer {
             while (true) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(1000));
                 for (ConsumerRecord<String, String> record : records) {
+                    PriceEvent priceEvent;
                     String ticker = record.key();
                     String json = record.value();
-
-                    PriceEvent priceEvent = mapper.readValue(json, PriceEvent.class);
+                    try {
+                        priceEvent = mapper.readValue(json, PriceEvent.class);
+                    } catch (JacksonException e) {
+                        System.err.printf("Skipped invalid event (partition %d, offset %d): %s%n", record.partition(), record.offset(), e.getMessage());
+                        continue;
+                    } 
+                   
 
                     double price = priceEvent.price();
 
