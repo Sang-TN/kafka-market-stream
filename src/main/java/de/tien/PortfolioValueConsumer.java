@@ -5,6 +5,7 @@ import java.util.Properties;
 import java.time.Duration;
 import java.util.List;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.core.JacksonException;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -33,8 +34,16 @@ public class PortfolioValueConsumer {
                 for (ConsumerRecord<String, String> record : records) {
                     String ticker = record.key();
                     String json = record.value();
+                    PriceEvent priceEvent;
 
-                    PriceEvent priceEvent = mapper.readValue(json, PriceEvent.class);
+                    try {
+                        priceEvent = mapper.readValue(json, PriceEvent.class);
+                    } catch (JacksonException e) {
+                        System.err.printf("Skipped invalid event (partition %d, offset %d): %s%n", record.partition(),
+                                record.offset(), e.getMessage());
+                        continue;
+                    }
+
                     double price = priceEvent.price();
                     lastPrices.put(ticker, price);
 

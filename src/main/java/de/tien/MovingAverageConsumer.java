@@ -36,10 +36,10 @@ public class MovingAverageConsumer {
                     try {
                         priceEvent = mapper.readValue(json, PriceEvent.class);
                     } catch (JacksonException e) {
-                        System.err.printf("Skipped invalid event (partition %d, offset %d): %s%n", record.partition(), record.offset(), e.getMessage());
+                        System.err.printf("Skipped invalid event (partition %d, offset %d): %s%n", record.partition(),
+                                record.offset(), e.getMessage());
                         continue;
-                    } 
-                   
+                    }
 
                     double price = priceEvent.price();
 

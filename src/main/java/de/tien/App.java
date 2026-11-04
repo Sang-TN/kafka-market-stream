@@ -28,7 +28,7 @@ public class App {
         config.put("value.serializer", StringSerializer.class.getName());
 
         Random random = new Random();
-        double sigma = 0.01;
+        double sigma = 0.001;
 
         try (KafkaProducer<String, String> producer = new KafkaProducer<>(config)) {
             while (true) {
